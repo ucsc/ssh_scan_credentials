@@ -5,19 +5,16 @@
 import sys, pdb, getpass
 from socket import gaierror, error, timeout
 import threading
-sys.path.append('./paramiko/site-packages/')
-import paramiko, ecdsa
-#try:
-#    import interactive
-#except ImportError:
-#    from . import interactive
+import os.path
+import exceptions
+sys.path.append('./paramiko/lib-12.04/sites-packages/')
+import paramiko
+import ecdsa
 
 COMMAND='hostname; uptime'
 USER='secscan1'
-HOST='128.114.2.163'
 PASSWORD = getpass.getpass("Enter password for SSH systems:")
 up = open("up_servers.txt",'w')
-ssh_servers = open('20140617_hosts.txt','r')
 
 def scan_ssh(HOST):
   try:
@@ -69,14 +66,23 @@ def scan_ssh(HOST):
 
 def main():
   thread_list = []
-  for line in ssh_servers:
-    HOST = line.strip()+".ucsc.edu"
-    t = threading.Thread(target=scan_ssh, args=(HOST,))
-    t.start()
-    thread_list.append(t)
+  if len(sys.argv) == 2 and os.path.isfile(sys.argv[1]):
+    ssh_servers = open(sys.argv[1])
+  else:
+    print "File needs to be entered with command. File needs to be valid."
+    exit(1)
+  try:
+    for line in ssh_servers:
+      HOST = line.strip()
+      t = threading.Thread(target=scan_ssh, args=(HOST,))
+      t.start()
+      thread_list.append(t)
   
-  for t in thread_list:
-    t.join()
+    for t in thread_list:
+      t.join()
+
+  except Exception as e:
+    print "File failed to open."
 
   up.close()
   ssh_servers.close()
